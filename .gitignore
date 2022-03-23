@@ -1,0 +1,7 @@
+/node_modules
+/lists/ChazzQuotes.txt
+
+.env
+
+/.idea
+/.vscode
