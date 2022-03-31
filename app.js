@@ -5,6 +5,7 @@ const util = require('util')
 
 const appendFile = util.promisify(fs.appendFile)
 const readFile = util.promisify(fs.readFile)
+const writeFile = util.promisify(fs.writeFile)
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -113,6 +114,31 @@ app.command('/yossers', async ({ command, ack, say }) => {
     }
 })
 
+app.command('/logmiranch', async ({ command, ack, say }) => {
+    try {
+        await ack()
+        let time = isNaN(command.text) ? false : Number(command.text)
+        if (!time) {
+            say('Input is not a number!')
+        } else {
+            say('Logging ' + time + ' hours at Mi Ranchitooooo!')
+            logHours(time)
+        }
+    } catch (err) {
+        console.error(err)
+    }
+})
+
+app.command('/miranch', async ({ command, ack, say }) => {
+    try {
+        await ack()
+        let time = await readHours()
+        say('THE BOYS HAVE SPENT ' + time + ' HOURS AT MI RANCH THIS SEMESTER')
+    } catch (err) {
+        console.error(err)
+    }
+})
+
 app.action('no_add_quote', async ({ body, ack, say }) => {
     await ack()
     say('Cool. Thanks for wasting my time.')
@@ -143,6 +169,12 @@ app.event('message', async ({ event, say }) => {
     try {
         if (event.channel_type != 'im' && event.text && event.text.toLowerCase().includes('chazz')) {
             await say({ text: '\"' + await pullQuote() + '\"' })
+        } else if (event.text && event.text.toLowerCase().includes('griddy')) {
+            let f = await app.client.files.upload({
+                "channels": event.channel,
+                "file": fs.createReadStream('lists/griddy.mp4'),
+                "initial_comment": "\"We just ate someone else's pizza off a bench.\""
+            })
         }
     } catch (err) {
         console.error(err)
@@ -207,4 +239,16 @@ async function pullQuote() {
     let quotes = await readFile('lists/ChazzQuotes.txt')
     quotes = quotes.toString().split('\n')
     return quotes[Math.floor(Math.random() * quotes.length)]
+}
+
+async function logHours(hours) {
+    let current = await readFile('lists/MiRanch.txt')
+    let num = Number(current)
+    num += hours
+    await writeFile('lists/MiRanch.txt', num.toString())
+}
+
+async function readHours() {
+    let current = await readFile('lists/MiRanch.txt')
+    return Number(current)
 }
